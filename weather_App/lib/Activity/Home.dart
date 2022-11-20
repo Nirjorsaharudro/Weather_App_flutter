@@ -13,6 +13,7 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  TextEditingController searchController = new TextEditingController();
   String? location;
   String? temp; //C
   String? humidity; //%
@@ -26,6 +27,7 @@ class _HomeState extends State<Home> {
 
     print(temp);
     setState(() {
+      location = worker_model.location;
       temp = worker_model.temp;
       humidity = worker_model.humidity;
       air_Speed = (worker_model.air_Speed)?.substring(0,4);
@@ -34,7 +36,21 @@ class _HomeState extends State<Home> {
       icon = worker_model.icon;
     });
 }
+  void cityApp(String cityName) async{
+    worker worker_model1 = worker();
+    await worker_model1.getCityData("$cityName");
+    WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {
+      print("Hello $location $temp");
+      location = worker_model1.location;
+      temp = worker_model1.temp;
+      humidity = worker_model1.humidity;
+      air_Speed = (worker_model1.air_Speed)?.substring(0,3);
+      description = worker_model1.description;
+      main = worker_model1.main;
+      icon = worker_model1.icon;
+    }));
 
+  }
   @override
   void initState() {
     startApp();
@@ -80,13 +96,20 @@ class _HomeState extends State<Home> {
                     child: Row(
                       children:[
                         GestureDetector(
-                          onTap: (){
-                            print('search me');
+                          onTap: () async {
+                            if(searchController.text ==""){
+                              print("Blank State");
+                            }else{
+                              cityApp(searchController.text);
+                              print("$location $temp");
+                              print(searchController.text);
+                            }
                           },
                           child: Container(child: Icon(Icons.search,color: Colors.black,),margin: EdgeInsets.fromLTRB(3, 0, 7, 0),),
                         ),
                         Expanded(
                             child: TextField(
+                              controller: searchController,
                               decoration: InputDecoration(
                                 border: InputBorder.none,
                                 hintText: "Search $city"
@@ -118,7 +141,7 @@ class _HomeState extends State<Home> {
                                         fontWeight: FontWeight.bold
                                     ),
                                   ),
-                                  Text("In Rajshahi",
+                                  Text("In $location",
                                     style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold
@@ -291,6 +314,7 @@ class worker{
       description = getDes;
       main = getMain_des;
       icon = getIcon;
+      location = "Rajshahi";
       //print(temp);
     }catch(e){
       temp = "Error occured";
@@ -299,6 +323,47 @@ class worker{
       description = "Error occured";
       main = "Error occured";
       icon = "03n";
+      location = "Not Found";
+    }
+  }
+  Future<void> getCityData(String cityName) async{
+    try {
+      var weatherData = await Weather().getCityWeather("$cityName");
+      //print("hello");
+      //Getting temp,humidity
+      Map temp_data = weatherData['main'];
+      int getHumidity = temp_data['humidity'];
+      double getTemp = temp_data['temp'] ;
+
+      //Getting wind speed
+      Map wind = weatherData['wind'];
+      double getWind_speed = wind['speed']/0.27777777777778;
+
+      //Getting description
+      List weather_data = weatherData['weather'];
+      Map weather_main_data = weather_data[0];
+      String getMain_des = weather_main_data['main'];
+      String getDes = weather_main_data['description'];
+      String getIcon = weather_main_data['icon'].toString();
+
+
+      //Assigning values
+      temp = getTemp.toString();
+      humidity = getHumidity.toString();
+      air_Speed = getWind_speed.toString();
+      description = getDes;
+      main = getMain_des;
+      icon = getIcon;
+      location = cityName;
+      //print(temp);
+    }catch(e){
+      temp = "Error occured";
+      humidity = "Error occured";
+      air_Speed = "Error occured";
+      description = "Error occured";
+      main = "Error occured";
+      icon = "03n";
+      location = "Not Found";
     }
   }
 
